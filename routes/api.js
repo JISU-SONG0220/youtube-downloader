@@ -66,8 +66,8 @@ router.post('/download', async (req, res) => {
   if (formatId.startsWith('cobalt:')) {
     try {
       const cobaltOpts = type === 'audio'
-        ? { downloadMode: 'audio', audioFormat: validAudioFormats.includes(outputFormat) ? outputFormat : 'mp3' }
-        : { videoQuality: formatId.replace('cobalt:', '') || 'max', downloadMode: 'auto' };
+        ? { isAudio: true, audioFormat: validAudioFormats.includes(outputFormat) ? outputFormat : 'mp3' }
+        : { quality: formatId.replace('cobalt:', '') || 'max' };
 
       const { url: streamUrl } = await cobalt.getStreamUrl(url, cobaltOpts);
 

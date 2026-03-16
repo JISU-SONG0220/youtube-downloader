@@ -36,20 +36,43 @@ async function getInfo(url) {
   };
 }
 
-async function getStreamUrl(youtubeUrl, options = {}) {
+// cobalt API v10 사양에 맞게 요청
+async function getStreamUrl(youtubeUrl, { quality, isAudio = false, audioFormat = 'mp3' } = {}) {
+  const body = isAudio
+    ? { url: youtubeUrl, downloadMode: 'audio', audioFormat }
+    : { url: youtubeUrl, videoQuality: quality || 'max' };
+
   const res = await fetch(COBALT_API, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify({ url: youtubeUrl, filenameStyle: 'basic', ...options }),
+    body: JSON.stringify(body),
   });
 
-  if (!res.ok) throw new Error(`cobalt API 오류: ${res.status}`);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`cobalt API 오류 ${res.status}: ${text.slice(0, 200)}`);
+  }
+
   const data = await res.json();
 
-  if (data.status === 'error') throw new Error(data.error?.code || 'cobalt 오류');
-  if (!data.url) throw new Error('cobalt에서 다운로드 URL을 받지 못했습니다.');
+  if (data.status === 'error') {
+    throw new Error(data.error?.code || JSON.stringify(data.error) || 'cobalt 오류');
+  }
 
-  return { url: data.url, filename: data.filename || 'video.mp4' };
+  // redirect / tunnel → 직접 URL
+  if (data.status === 'redirect' || data.status === 'tunnel') {
+    if (!data.url) throw new Error('cobalt에서 URL을 받지 못했습니다.');
+    return { url: data.url, filename: data.filename || 'video.mp4' };
+  }
+
+  // picker → 첫 번째 항목 사용
+  if (data.status === 'picker') {
+    const first = data.picker?.[0];
+    if (!first?.url) throw new Error('cobalt picker에서 항목을 찾을 수 없습니다.');
+    return { url: first.url, filename: data.filename || 'video.mp4' };
+  }
+
+  throw new Error(`알 수 없는 cobalt 응답 상태: ${data.status}`);
 }
 
 async function proxyStream(streamUrl, res) {
