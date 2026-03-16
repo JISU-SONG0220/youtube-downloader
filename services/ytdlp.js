@@ -11,10 +11,10 @@ const VIDEO_ENCODER = isMac ? 'h264_videotoolbox' : 'libx264';
 
 // YouTube 봇 차단 우회 옵션
 const YTDLP_BYPASS_ARGS = [
-  '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-  '--extractor-args', 'youtube:player_client=web',
+  '--user-agent', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1',
+  '--extractor-args', 'youtube:player_client=ios,web',
   '--no-check-certificates',
-  '--js-runtime', 'nodejs',
+  '--geo-bypass',
 ];
 
 // 동시 다운로드 제한

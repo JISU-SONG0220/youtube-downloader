@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
-# yt-dlp 설치
-RUN pip3 install --break-system-packages yt-dlp
+# yt-dlp 최신 버전 설치
+RUN pip3 install --break-system-packages --upgrade yt-dlp
 
 WORKDIR /app
 
@@ -24,7 +24,8 @@ RUN mkdir -p temp
 
 ENV FFMPEG_PATH=/usr/bin/ffmpeg
 ENV NODE_ENV=production
-# yt-dlp가 Node.js를 JS 런타임으로 사용하도록 PATH에 등록
+# yt-dlp JS 런타임으로 Node.js 사용
+ENV YTDLP_JS_RUNTIME=node
 ENV PATH="/usr/local/bin:${PATH}"
 
 EXPOSE 3000
