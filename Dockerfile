@@ -24,6 +24,8 @@ RUN mkdir -p temp
 
 ENV FFMPEG_PATH=/usr/bin/ffmpeg
 ENV NODE_ENV=production
+# yt-dlp가 Node.js를 JS 런타임으로 사용하도록 PATH에 등록
+ENV PATH="/usr/local/bin:${PATH}"
 
 EXPOSE 3000
 

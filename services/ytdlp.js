@@ -5,13 +5,25 @@ const fs = require('fs');
 const TEMP_DIR = path.join(__dirname, '..', 'temp');
 const FFMPEG_PATH = process.env.FFMPEG_PATH || '/opt/homebrew/bin/ffmpeg';
 
+// macOS: h264_videotoolbox (하드웨어), Linux: libx264 (소프트웨어)
+const isMac = process.platform === 'darwin';
+const VIDEO_ENCODER = isMac ? 'h264_videotoolbox' : 'libx264';
+
+// YouTube 봇 차단 우회 옵션
+const YTDLP_BYPASS_ARGS = [
+  '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+  '--extractor-args', 'youtube:player_client=web',
+  '--no-check-certificates',
+  '--js-runtime', 'nodejs',
+];
+
 // 동시 다운로드 제한
 let activeDownloads = 0;
 const MAX_CONCURRENT_DOWNLOADS = 3;
 
 function runYtDlp(args) {
   return new Promise((resolve, reject) => {
-    const proc = spawn('yt-dlp', args);
+    const proc = spawn('yt-dlp', [...YTDLP_BYPASS_ARGS, ...args]);
     let stdout = '';
     let stderr = '';
 
@@ -169,6 +181,7 @@ function ytDlpMerge(url, formatId, outputTemplate, mergeFormat) {
       '--merge-output-format', mergeFormat,
       '--ffmpeg-location', FFMPEG_PATH,
       '--concurrent-fragments', '4',
+      ...YTDLP_BYPASS_ARGS,
       '-o', outputTemplate,
       '--newline',
       url,
@@ -195,6 +208,7 @@ function ytDlpDownloadOnly(url, formatId, outputTemplate) {
       '--no-playlist',
       '-f', formatId,
       '--concurrent-fragments', '4',
+      ...YTDLP_BYPASS_ARGS,
       '-o', outputTemplate,
       '--newline',
       url,
@@ -221,9 +235,8 @@ function ffmpegMergeEncode(videoFile, audioFile, outputFile) {
       '-y',
       '-i', videoFile,
       '-i', audioFile,
-      '-c:v', 'h264_videotoolbox',
-      '-b:v', '8000k',
-      '-realtime', 'true',
+      '-c:v', VIDEO_ENCODER,
+      ...(isMac ? ['-b:v', '8000k', '-realtime', 'true'] : ['-preset', 'fast', '-crf', '23']),
       '-c:a', 'aac',
       '-movflags', '+faststart',
       outputFile,
@@ -304,6 +317,7 @@ function downloadAudio(url, audioQuality, outputPath, outputFormat, onProgress) 
       '--audio-quality', audioQuality,
       '--ffmpeg-location', FFMPEG_PATH,
       '--concurrent-fragments', '4',
+      ...YTDLP_BYPASS_ARGS,
       '-o', outputPath,
       '--newline',
       url
